@@ -1,0 +1,197 @@
+<meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forget Password</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            font-family: "Work Sans", sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #150739;
+        }
+
+        h2 {
+            color: rgb(13, 13, 13);
+        }
+
+        .reset-container {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.2);
+            width: 350px;
+            text-align: center;
+            border: 2px solid #ffffff;
+        }
+
+        .input-box {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        .btn {
+            width: 100%;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 16px;
+            margin-top: 10px;
+            transition: background 0.3s;
+        }
+
+        .btn:hover {
+            background-color: #0056b3;
+        }
+
+        p {
+            color: rgb(13, 13, 13);
+        }
+
+    </style>
+</head>
+<body>
+    <div class="reset-container">
+        <h2>Reset Password</h2>
+        <form id="resetForm">
+            <input type="text" id="emailOrUsername" name="emailOrUsername" required class="input-box" placeholder="Enter Email or Username">
+            <button type="submit" class="btn">Reset Password</button>
+        </form>
+        <p>Back to <a href="login.html"><b>Login</b></a></p>
+    </div>
+    <div id="loader" style="display: none;">
+        <div class="loader"></div>
+      </div>
+<script>
+    document.getElementById("resetForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+
+    let emailOrUsername = document.getElementById("emailOrUsername").value;
+    let storedUsername = localStorage.getItem("tour_local");
+
+    // ✅ 1. यूजर चेक करना (Local Storage में है या नहीं)
+    if (!storedUsername || storedUsername !== emailOrUsername) {
+        alert("⚠ Please enter a valid username or email.");
+        return;
+    }
+
+    // ✅ 2. लोडर दिखाना
+    showLoader();
+
+    let fd = new FormData();
+    fd.append("emailOrUsername", emailOrUsername);
+    fd.append("action", "sendOtp");
+
+    // ✅ 3. OTP भेजना
+    fetch("https://script.google.com/macros/s/AKfycbx0j6cuDK0N3rlhB7-WShuQjFmTol72hFWm_zOKpAvV8R6AU5VctV4vsAaObJhp7wo/exec", {
+        method: "POST",
+        body: fd,
+    })
+        .then(response => response.text())
+        .then(data => {
+            hideLoader();
+            if (data === "OTP_SENT") {
+                showOtpInput();
+            } else {
+                alert("❌ Error sending OTP. Try again!");
+            }
+        })
+        .catch(error => {
+            hideLoader();
+            alert("❌ Network error! Please try again.");
+        });
+});
+
+// ✅ 4. OTP इनपुट दिखाना
+function showOtpInput() {
+    document.querySelector(".reset-container").innerHTML = `
+        <h2>Enter OTP</h2>
+        <input type="text" id="otp" class="input-box" placeholder="Enter OTP">
+        <button onclick="verifyOtp()" class="btn">Verify OTP</button>
+    `;
+}
+
+// ✅ 5. OTP वेरिफाई करना
+function verifyOtp() {
+    let otp = document.getElementById("otp").value;
+    showLoader();
+
+    let fd = new FormData();
+    fd.append("otp", otp);
+    fd.append("action", "verifyOtp");
+
+    fetch("https://script.google.com/macros/s/AKfycbx0j6cuDK0N3rlhB7-WShuQjFmTol72hFWm_zOKpAvV8R6AU5VctV4vsAaObJhp7wo/exec", {
+        method: "POST",
+        body: fd,
+    })
+        .then(response => response.text())
+        .then(data => {
+            hideLoader();
+            if (data === "OTP_VERIFIED") {
+                showPasswordResetForm();
+            } else {
+                alert("❌ Invalid OTP! Try again.");
+            }
+        })
+        .catch(error => {
+            hideLoader();
+            alert("❌ Network error! Please try again.");
+        });
+}
+
+// ✅ 6. पासवर्ड रीसेट फॉर्म दिखाना
+function showPasswordResetForm() {
+    document.querySelector(".reset-container").innerHTML = `
+        <h2>Reset Password</h2>
+        <input type="password" id="newPassword" class="input-box" placeholder="Enter New Password">
+        <button onclick="resetPassword()" class="btn">Update Password</button>
+    `;
+}
+
+// ✅ 7. पासवर्ड अपडेट करना
+function resetPassword() {
+    let newPassword = document.getElementById("newPassword").value;
+    showLoader();
+
+    let fd = new FormData();
+    fd.append("newPassword", newPassword);
+    fd.append("action", "resetPassword");
+
+    fetch("https://script.google.com/macros/s/AKfycbx0j6cuDK0N3rlhB7-WShuQjFmTol72hFWm_zOKpAvV8R6AU5VctV4vsAaObJhp7wo/exec", {
+        method: "POST",
+        body: fd,
+    })
+        .then(response => response.text())
+        .then(data => {
+            hideLoader();
+            if (data === "PASSWORD_UPDATED") {
+                alert("✅ Password updated successfully! Please login.");
+                window.location.href = "login.html";
+            } else {
+                alert("❌ Error updating password! Try again.");
+            }
+        })
+        .catch(error => {
+            hideLoader();
+            alert("❌ Network error! Please try again.");
+        });
+}
+
+// ✅ 8. लोडर को दिखाने और छिपाने के लिए फंक्शन
+function showLoader() {
+    document.getElementById("loader").style.display = "flex";
+}
+
+function hideLoader() {
+    document.getElementById("loader").style.display = "none";
+}
+
+</script>
